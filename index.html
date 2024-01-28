@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Socket.IO Chat</title>
+    <script src="socket.io/socket.io.js"></script>
+    <style>
+      #chat-box {
+        height: 300px;
+        overflow-y: scroll;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Socket.IO Chat</h1>
+
+    <div id="chat-box"></div>
+
+    <form id="message-form">
+      <label for="name">Name:</label>
+      <input type="text" id="name" placeholder="Enter your name" required />
+      <br />
+      <label for="message">Message:</label>
+      <input
+        type="text"
+        id="message"
+        placeholder="Type your message"
+        required
+      />
+      <br />
+      <button type="submit">Send</button>
+    </form>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const socket = io();
+
+        const chatBox = document.getElementById("chat-box");
+        const messageForm = document.getElementById("message-form");
+
+        messageForm.addEventListener("submit", function (event) {
+          event.preventDefault();
+          const nameInput = document.getElementById("name");
+          const messageInput = document.getElementById("message");
+
+          const name = nameInput.value;
+          const message = messageInput.value;
+
+          // Emit a 'messagedetection' event to the server
+          socket.emit("messagedetection", name, message);
+
+          // Clear the message input field
+          messageInput.value = "";
+        });
+
+        // Listen for 'message' events from the server
+        socket.on("message", function (messages) {
+          const newMessage = document.createElement("p");
+          newMessage.textContent = `${messages.senderNickname}: ${messages.message}`;
+          chatBox.appendChild(newMessage);
+        });
+
+        // Listen for 'userjoinedthechat' events from the server
+        socket.on("userjoinedthechat", function (message) {
+          const newUserMessage = document.createElement("p");
+          newUserMessage.textContent = message;
+          chatBox.appendChild(newUserMessage);
+        });
+
+        // Listen for 'userdisconnect' events from the server
+        socket.on("userdisconnect", function (message) {
+          const userDisconnectMessage = document.createElement("p");
+          userDisconnectMessage.textContent = message;
+          chatBox.appendChild(userDisconnectMessage);
+        });
+      });
+    </script>
+  </body>
+</html>
