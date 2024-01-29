@@ -36,6 +36,7 @@ public class ChatBoxActivity extends AppCompatActivity {
     Button send;
     List<Message> messageList;
 
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -55,7 +56,7 @@ public class ChatBoxActivity extends AppCompatActivity {
         Toast.makeText(this, name, Toast.LENGTH_SHORT).show();
 
         try {
-            socket = IO.socket("http://192.168.170.105:3000/");
+            socket = IO.socket("https://chat-app-backend-sayan.onrender.com/");
             socket.connect();
 
             socket.emit("join",name);
@@ -90,8 +91,20 @@ public class ChatBoxActivity extends AppCompatActivity {
                 if (args[0] instanceof JSONArray) {
                     // If it's a JSONArray, handle it accordingly
                     JSONArray jsonArray = (JSONArray) args[0];
-                    // Log or process the JSONArray as needed
-                    Log.d("DATABASE_CONTENT", jsonArray.toString());
+
+                    for(int i=0;i< jsonArray.length();i++){
+                        JSONObject jsonObject = null;
+                        try {
+                            jsonObject = jsonArray.getJSONObject(i);
+                            String msg = jsonObject.getString("msg");
+                            Message m = new Message("sayan",msg);
+                            messageList.add(m);
+                            Log.d("DATABASE_CONTENT", "msg: " + msg);
+                        } catch (JSONException e) {
+                            throw new RuntimeException(e);
+                        }
+
+                    }
                 }
             }
         });
@@ -113,8 +126,8 @@ public class ChatBoxActivity extends AppCompatActivity {
                         runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
+                                recyclerView.smoothScrollToPosition(adapter.getItemCount()-1);
                                 recyclerView.setAdapter(adapter);
-                                Toast.makeText(ChatBoxActivity.this, object.toString(), Toast.LENGTH_SHORT).show();
 
                             }
                         });
@@ -141,8 +154,6 @@ public class ChatBoxActivity extends AppCompatActivity {
 
             }
         });
-
-
     }
 
     @Override
@@ -150,4 +161,5 @@ public class ChatBoxActivity extends AppCompatActivity {
         super.onDestroy();
         socket.disconnect();
     }
+
 }
