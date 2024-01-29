@@ -13,6 +13,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -83,31 +84,53 @@ public class ChatBoxActivity extends AppCompatActivity {
             }
         });
 
-        socket.on("message", new Emitter.Listener() {
+        socket.on("output-message", new Emitter.Listener() {
             @Override
             public void call(Object... args) {
-                JSONObject object = (JSONObject) args[0];
-                try {
-                    String nickName = object.getString("senderNickname");
-                    String messageContent = object.getString("message");
-
-                    Message m = new Message(nickName,messageContent);
-                    messageList.add(m);
-
-                    ChatBoxAdapter adapter = new ChatBoxAdapter(messageList);
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            recyclerView.setAdapter(adapter);
-                        }
-                    });
-
-                    Log.d("MESSAGE",object.toString());
-                } catch (JSONException e) {
-                    throw new RuntimeException(e);
+                if (args[0] instanceof JSONArray) {
+                    // If it's a JSONArray, handle it accordingly
+                    JSONArray jsonArray = (JSONArray) args[0];
+                    // Log or process the JSONArray as needed
+                    Log.d("DATABASE_CONTENT", jsonArray.toString());
                 }
             }
         });
+
+        socket.on("message", new Emitter.Listener() {
+            @Override
+            public void call(Object... args) {
+                if (args[0] instanceof JSONObject) {
+                    // If it's a JSONObject, process it accordingly
+                    JSONObject object = (JSONObject) args[0];
+                    try {
+                        String nickName = object.getString("senderNickname");
+                        String messageContent = object.getString("message");
+
+                        Message m = new Message(nickName, messageContent);
+                        messageList.add(m);
+
+                        ChatBoxAdapter adapter = new ChatBoxAdapter(messageList);
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                recyclerView.setAdapter(adapter);
+                                Toast.makeText(ChatBoxActivity.this, object.toString(), Toast.LENGTH_SHORT).show();
+
+                            }
+                        });
+
+                        Log.d("MESSAGE", object.toString());
+                    } catch (JSONException e) {
+                        throw new RuntimeException(e);
+                    }
+                } else if (args[0] instanceof String) {
+                    // If it's a String, handle it accordingly
+                    String messageString = (String) args[0];
+                    // Handle the string content as needed
+                }
+            }
+        });
+
 
         socket.on("userdisconnect", new Emitter.Listener() {
             @Override
