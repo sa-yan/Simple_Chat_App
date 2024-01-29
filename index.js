@@ -3,6 +3,21 @@ const http = require("http");
 const app = express();
 const { Server } = require("socket.io");
 const path = require("path");
+const mongoose = require("mongoose");
+
+const Msg = require("./models/models");
+
+const mongoUrl =
+  "mongodb+srv://geekysayan:sayan2003@cluster0.itllhoq.mongodb.net/?retryWrites=true&w=majority";
+
+mongoose
+  .connect(mongoUrl)
+  .then(() => {
+    console.log("Database Connected...");
+  })
+  .catch(() => {
+    console.log("Failed to connect");
+  });
 
 const server = http.createServer(app);
 
@@ -10,6 +25,16 @@ const io = new Server(server);
 
 io.on("connection", (socket) => {
   console.log("A new user has connected", socket.id);
+
+  Msg.find()
+    .then((res) => {
+      console.log(res);
+      socket.emit("output-message", res);
+    })
+    .catch((err) => {
+      console.log(err);
+    });
+
   socket.on("join", function (userNickname) {
     console.log(userNickname + " : has joined the chat ");
     socket.broadcast.emit(
@@ -18,13 +43,19 @@ io.on("connection", (socket) => {
     );
   });
 
+  socket.emit("message", "Hello world");
+
   socket.on("messagedetection", (name, message) => {
     console.log(name + " : " + message);
     let messages = { message: message, senderNickname: name };
 
-    // send the message to the client side
+    const message_db = new Msg({ msg: message });
 
-    socket.emit("message", messages);
+    message_db.save().then(() => {
+      // send the message to the client side
+      io.emit("message", messages);
+      console.log("message", messages);
+    });
   });
 
   socket.on("disconnect", function () {
